@@ -1,12 +1,12 @@
 const express = require("express")
 
+const routes = require("./routes")
+const router = require("./routes")
+
 const app = express()
 
-app.get("/", (req, res) => {
-    res.json({
-        success: true,
-        message: "LedgerBank API is running",
-    })
-})
+app.use(express.json())
 
-module.exports = app;
+app.use("/api/v1", routes)
+
+module.exports = app
