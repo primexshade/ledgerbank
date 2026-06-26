@@ -1,5 +1,7 @@
 const express = require("express")
 
+const authRoutes = require("./auth.routes")
+
 const router = express.Router()
 
 router.get("/health", (req, res) => {
@@ -9,5 +11,7 @@ router.get("/health", (req, res) => {
         timestamp: new Date().toISOString(),
     })
 })
+
+router.use("/auth", authRoutes)
 
 module.exports = router
