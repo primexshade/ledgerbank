@@ -5,10 +5,12 @@ const {
 
 const {
     validateRegistration,
+    validateLogin,
 } = require("../validators/auth.validator");
 
 const {
     registerUser,
+    loginUser,
 } = require("../services/auth.service");
 
 const register = async (req, res) => {
@@ -42,6 +44,37 @@ const register = async (req, res) => {
     }
 };
 
+const login = async (req, res) => {
+    const validateError = validateLogin(req.body)
+
+    if (validateError) {
+        return errorResponse(
+            res,
+            validateError,
+            null,
+            400
+        )
+    }
+
+    try {
+        const result = await loginUser(req.body)
+
+        return successResponse(
+            res,
+            "Login Successful",
+            result
+        )
+    } catch (error) {
+        return errorResponse(
+            res,
+            error.message,
+            null,
+            401
+        )
+    }
+}
+
 module.exports = {
     register,
+    login,
 };

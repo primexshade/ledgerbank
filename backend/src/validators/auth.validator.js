@@ -18,6 +18,21 @@ const validateRegistration = (userData) => {
     return null;
 }
 
+const validateLogin = (userData) => {
+    const { email, password } = userData
+
+    if (!email || !password) {
+        return "Email and password are required."
+    }
+
+    if (!validator.isEmail(email)) {
+        return "Invalid email address"
+    }
+
+    return null
+}
+
 module.exports = {
     validateRegistration,
+    validateLogin,
 }
