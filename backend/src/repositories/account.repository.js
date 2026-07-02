@@ -8,12 +8,12 @@ const findAccountByNumber = async (accountNumber) => {
     return await Account.findOne({ accountNumber })
 }
 
-const findAccountByUserId = async (userId) => {
-    return await Account.findOne({ userId })
+const findAccountsByUserId = async (userId) => {
+    return await Account.find({ userId })
 }
 
 module.exports = {
     createAccount,
     findAccountByNumber,
-    findAccountByUserId,
+    findAccountsByUserId,
 }
