@@ -19,6 +19,28 @@ const deposit = async (req, res) => {
     }
 }
 
+const withdraw = async (req, res) => {
+    try {
+        const { accountNumber, amount } = req.body
+
+        const result = await transactionService.withdraw(
+            accountNumber,
+            amount
+        )
+
+        return res.status(200).json({
+            success: true,
+            message: "Withdrawal successful",
+            data: result,
+        })
+    }catch (error) {
+        return res.status(400).json({
+            success: false,
+            message: error.message,
+        })
+    }
+}
+
 const getTransactionHistory = async (req, res) => {
     try {
         const { accountNumber } = req.params
@@ -27,7 +49,7 @@ const getTransactionHistory = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "Transaction feched successfully",
+            message: "Transaction fetched successfully",
             data: transactions,
         })
     } catch (error) {
@@ -40,5 +62,6 @@ const getTransactionHistory = async (req, res) => {
 
 module.exports = {
     deposit,
+    withdraw,
     getTransactionHistory,
 }

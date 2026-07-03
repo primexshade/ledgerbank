@@ -1,7 +1,8 @@
 const express = require("express");
 
 const {
-    deposit,
+    deposit, 
+    withdraw,
     getTransactionHistory,
 } = require("../controllers/transaction.controller");
 
@@ -14,6 +15,11 @@ router.post(
     "/deposit",
     authenticate,
     deposit
+);
+
+router.post("/withdraw",
+    authenticate,
+    withdraw
 );
 
 router.get(
