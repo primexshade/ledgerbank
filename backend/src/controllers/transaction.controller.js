@@ -41,6 +41,29 @@ const withdraw = async (req, res) => {
     }
 }
 
+const transfer = async (req, res) => {
+    try {
+        const { fromAccountNumber, toAccountNumber, amount } = req.body
+        
+        const result = await transactionService.transfer(
+            fromAccountNumber,
+            toAccountNumber,
+            amount
+        )
+        
+        return res.status(200).json({
+            success: true,
+            message: "Transfer successful",
+            data: result,
+        })
+    } catch (error) {
+        return res.status(400).json({
+            success: false,
+            message: error.message
+        })
+    }
+}
+
 const getTransactionHistory = async (req, res) => {
     try {
         const { accountNumber } = req.params
@@ -63,5 +86,6 @@ const getTransactionHistory = async (req, res) => {
 module.exports = {
     deposit,
     withdraw,
+    transfer,
     getTransactionHistory,
 }
