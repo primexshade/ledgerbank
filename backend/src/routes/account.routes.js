@@ -1,3 +1,17 @@
+/**
+ * Account Routes
+ *
+ * Defines all account-related API endpoints.
+ *
+ * Protected Routes:
+ * - Create bank account
+ * - Retrieve user accounts
+ *
+ * All routes require authentication.
+ *
+ * Project: LedgerBank
+ * Author: Aryan Tiwari
+ */
 const express = require("express");
 
 const {
@@ -11,12 +25,14 @@ const {
 
 const router = express.Router();
 
+// Create a new bank account for the authenticated user.
 router.post(
     "/",
     authenticate,
     createAccount
 );
 
+// Retrieve all accounts owned by the authenticated user.
 router.get(
     "/me",
     authenticate,

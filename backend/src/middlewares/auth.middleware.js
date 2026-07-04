@@ -1,3 +1,36 @@
+/**
+ * Authentication Middleware
+ *
+ * Protects secured routes by validating JWT access tokens.
+ *
+ * Responsibilities:
+ * - Extract JWT from Authorization header
+ * - Validate token signature and expiration
+ * - Populate req.user with token payload
+ * - Reject unauthorized requests
+ *
+ * Project: LedgerBank
+ * Author: Aryan Tiwari
+ */
+
+/**
+ * Authenticates incoming requests using JWT.
+ *
+ * Expected Header:
+ *
+ * Authorization: Bearer <token>
+ *
+ * On success:
+ * - req.user is populated
+ * - Request proceeds to next middleware
+ *
+ * On failure:
+ * - Returns HTTP 401 Unauthorized
+ *
+ * @param {Object} req
+ * @param {Object} res
+ * @param {Function} next
+ */
 const jwt = require("jsonwebtoken")
 
 const authenticate = async (req, res, next) => {

@@ -1,6 +1,39 @@
+/**
+ * Transaction Service
+ *
+ * Handles all transaction-related business logic.
+ *
+ * Responsibilities:
+ * - Deposit funds into an account
+ * - Withdraw funds from an account
+ * - Transfer funds between accounts
+ * - Retrieve transaction history
+ *
+ * This layer coordinates account updates and transaction creation
+ * while enforcing business validation rules.
+ *
+ * Project: LedgerBank
+ * Author: Aryan Tiwari
+ */
+
 const transactionRepository = require("../repositories/transaction.repository")
 const accountRepository = require("../repositories/account.repository")
 
+/**
+ * Deposits funds into a bank account.
+ *
+ * Validation Rules:
+ * - Account must exist
+ * - Amount must be greater than zero
+ *
+ * @param {string} accountNumber - Target account number
+ * @param {number} amount - Amount to deposit
+ *
+ * @returns {Promise<Object>} Updated account and transaction details
+ *
+ * @throws {Error} If account is not found
+ * @throws {Error} If amount is less than or equal to zero
+ */
 const deposit = async (accountNumber, amount) => {
     const account = await accountRepository.findAccountByNumber(accountNumber)
 
@@ -12,9 +45,11 @@ const deposit = async (accountNumber, amount) => {
         throw new Error("Amount must be greater than zero")
     }
 
+    // Update account balance before recording transaction
     account.balance += amount
     await account.save()
 
+    // Record the deposit for audit and transaction history purposes
     const transaction = await transactionRepository.createTransaction({
         accountId: account._id,
         type: "DEPOSIT",
@@ -30,24 +65,43 @@ const deposit = async (accountNumber, amount) => {
     }
 }
 
+/**
+ * Withdraws funds from a bank account.
+ *
+ * Validation Rules:
+ * - Account must exist
+ * - Amount must be greater than zero
+ * - Account must have sufficient balance
+ *
+ * @param {string} accountNumber - Source account number
+ * @param {number} amount - Amount to withdraw
+ *
+ * @returns {Promise<Object>} Updated account and transaction details
+ *
+ * @throws {Error} If account is not found
+ * @throws {Error} If amount is invalid
+ * @throws {Error} If balance is insufficient
+ */
 const withdraw = async (accountNumber, amount) => {
     const account = await accountRepository.findAccountByNumber(accountNumber)
 
-    if(!account){
+    if (!account) {
         throw new Error("Account not found")
     }
 
-    if(amount <= 0){
-        throw new Error ("Amount must be greater than zero")
+    if (amount <= 0) {
+        throw new Error("Amount must be greater than zero")
     }
 
-    if(account.balance < amount){
+    if (account.balance < amount) {
         throw new Error("Insufficient balance")
     }
-    
+
+    // Deduct the requested amount from the account balance
     account.balance -= amount
     await account.save()
-    
+
+    // Record the withdrawal transaction
     const transaction = await transactionRepository.createTransaction({
         accountId: account._id,
         type: "WITHDRAWAL",
@@ -63,39 +117,75 @@ const withdraw = async (accountNumber, amount) => {
     }
 }
 
-const transfer = async (fromAccountNumber, toAccountNumber,amount) => {
+/**
+ * Transfers funds between two bank accounts.
+ *
+ * Validation Rules:
+ * - Sender account must exist
+ * - Receiver account must exist
+ * - Sender and receiver must be different
+ * - Amount must be greater than zero
+ * - Sender must have sufficient balance
+ *
+ * Business Rules:
+ * - Sender balance is debited
+ * - Receiver balance is credited
+ * - Two transaction records are created
+ * - Both transaction records share the same reference number
+ *
+ * @param {string} fromAccountNumber - Sender account number
+ * @param {string} toAccountNumber - Receiver account number
+ * @param {number} amount - Transfer amount
+ *
+ * @returns {Promise<Object>} Transfer result containing account and transaction details
+ *
+ * @throws {Error} If sender account does not exist
+ * @throws {Error} If receiver account does not exist
+ * @throws {Error} If amount is invalid
+ * @throws {Error} If sender balance is insufficient
+ */
+const transfer = async (fromAccountNumber, toAccountNumber, amount) => {
     const sender = await accountRepository.findAccountByNumber(fromAccountNumber)
 
     const receiver = await accountRepository.findAccountByNumber(toAccountNumber)
 
-    if(!sender) {
+    if (!sender) {
         throw new Error("Sender account not found")
     }
 
-    if(!receiver){
+    if (!receiver) {
         throw new Error("Receiver account not found")
     }
 
-    if(fromAccountNumber === toAccountNumber){
+    if (fromAccountNumber === toAccountNumber) {
         throw new Error("Cannot transfer to the same account")
     }
 
-    if(amount <= 0){
+    if (amount <= 0) {
         throw new Error("Amount must be greater than zero")
     }
 
-    if(sender.balance < amount){
-        throw new Error("Insufficient balance") 
+    if (sender.balance < amount) {
+        throw new Error("Insufficient balance")
     }
 
+    // TODO:
+    // Use MongoDB transactions/session support to ensure
+    // atomic money transfer operations in production.
+
+
+    // Move funds between sender and receiver accounts
     sender.balance -= amount
     receiver.balance += amount
-    
+
     await sender.save()
     await receiver.save()
 
+    // Generate a shared reference number so both
+    // transaction records can be linked to the same transfer
     const reference = `TXN${Date.now()}`
 
+    // Create transaction entry for sender statement/history.
     const senderTransaction = await transactionRepository.createTransaction({
         accountId: sender._id,
         type: "TRANSFER",
@@ -104,9 +194,10 @@ const transfer = async (fromAccountNumber, toAccountNumber,amount) => {
         reference,
         status: "SUCCESS"
     })
-    
+
+    // Create transaction entry for receiver statement/history.
     const receiverTransaction = await transactionRepository.createTransaction({
-        accountId:receiver._id,
+        accountId: receiver._id,
         type: "TRANSFER",
         amount,
         description: `Transfer received from ${fromAccountNumber}`,
@@ -122,6 +213,15 @@ const transfer = async (fromAccountNumber, toAccountNumber,amount) => {
     }
 }
 
+/**
+ * Retrieves transaction history for an account.
+ *
+ * @param {string} accountNumber - Account number
+ *
+ * @returns {Promise<Array>} List of transactions ordered by newest first
+ *
+ * @throws {Error} If account is not found
+ */
 const getTransactionHistory = async (accountNumber) => {
     const account = await accountRepository.findAccountByNumber(accountNumber)
 

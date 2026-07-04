@@ -1,3 +1,22 @@
+/**
+ * User Model
+ *
+ * Represents application users within LedgerBank.
+ *
+ * Responsibilities:
+ * - Store customer/admin profile information
+ * - Store authentication credentials
+ * - Track verification status
+ * - Support role-based authorization
+ *
+ * Security Notes:
+ * - Passwords are stored as hashes only
+ * - Emails must be unique
+ *
+ * Project: LedgerBank
+ * Author: Aryan Tiwari
+ */
+
 const mongoose = require("mongoose")
 
 const userSchema = new mongoose.Schema(
@@ -9,7 +28,7 @@ const userSchema = new mongoose.Schema(
         },
         lastName: {
             type: String,
-            requied: true,
+            required: true,
             trim: true,
         },
 
