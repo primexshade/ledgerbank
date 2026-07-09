@@ -49,8 +49,20 @@ const findAccountsByUserId = async (userId) => {
     return await Account.find({ userId })
 }
 
+/**
+ * Retrieves an account by its identifier.
+ *
+ * @param {string} accountId - Account identifier
+ *
+ * @returns {Promise<Object|null>} Matching account document
+ */
+const findAccountById = async (accountId) => {
+    return Account.findById(accountId)
+}
+
 module.exports = {
     createAccount,
     findAccountByNumber,
     findAccountsByUserId,
+    findAccountById,
 }
