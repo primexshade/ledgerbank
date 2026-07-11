@@ -82,11 +82,15 @@ const deposit = async (accountNumber, amount) => {
  * @throws {Error} If amount is invalid
  * @throws {Error} If balance is insufficient
  */
-const withdraw = async (accountNumber, amount) => {
+const withdraw = async (userId, accountNumber, amount) => {
     const account = await accountRepository.findAccountByNumber(accountNumber)
 
     if (!account) {
         throw new Error("Account not found")
+    }
+
+    if(account.userId.toString() !== userId) {
+        throw new Error("Unauthorized access to account")
     }
 
     if (amount <= 0) {
@@ -144,13 +148,17 @@ const withdraw = async (accountNumber, amount) => {
  * @throws {Error} If amount is invalid
  * @throws {Error} If sender balance is insufficient
  */
-const transfer = async (fromAccountNumber, toAccountNumber, amount) => {
+const transfer = async (userId, fromAccountNumber, toAccountNumber, amount) => {
     const sender = await accountRepository.findAccountByNumber(fromAccountNumber)
 
     const receiver = await accountRepository.findAccountByNumber(toAccountNumber)
 
     if (!sender) {
         throw new Error("Sender account not found")
+    }
+
+    if(sender.userId.toString() !== userId) {
+        throw new Error("Unauthorized access to account")
     }
 
     if (!receiver) {
@@ -222,11 +230,15 @@ const transfer = async (fromAccountNumber, toAccountNumber, amount) => {
  *
  * @throws {Error} If account is not found
  */
-const getTransactionHistory = async (accountNumber) => {
+const getTransactionHistory = async (userId, accountNumber) => {
     const account = await accountRepository.findAccountByNumber(accountNumber)
 
     if (!account) {
         throw new Error("Account not found")
+    }
+
+    if(account.userId.toString() !== userId) {
+        throw new Error("Unauthorized access to the account")
     }
 
     return await transactionRepository.findTransactionByAccountId(account._id)

@@ -70,6 +70,7 @@ const withdraw = async (req, res) => {
         const { accountNumber, amount } = req.body
 
         const result = await transactionService.withdraw(
+            req.user.userId,
             accountNumber,
             amount
         )
@@ -107,6 +108,7 @@ const transfer = async (req, res) => {
         const { fromAccountNumber, toAccountNumber, amount } = req.body
         
         const result = await transactionService.transfer(
+            req.user.userId,
             fromAccountNumber,
             toAccountNumber,
             amount
@@ -140,7 +142,7 @@ const getTransactionHistory = async (req, res) => {
     try {
         const { accountNumber } = req.params
 
-        const transactions = await transactionService.getTransactionHistory(accountNumber)
+        const transactions = await transactionService.getTransactionHistory(req.user.userId, accountNumber)
         
         // Fetch transaction history from service layer.
         return res.status(200).json({
