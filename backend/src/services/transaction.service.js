@@ -18,6 +18,7 @@
 
 const transactionRepository = require("../repositories/transaction.repository")
 const accountRepository = require("../repositories/account.repository")
+const mongoose = require("mongoose")
 
 /**
  * Deposits funds into a bank account.
@@ -148,76 +149,114 @@ const withdraw = async (userId, accountNumber, amount) => {
  * @throws {Error} If amount is invalid
  * @throws {Error} If sender balance is insufficient
  */
-const transfer = async (userId, fromAccountNumber, toAccountNumber, amount) => {
-    const sender = await accountRepository.findAccountByNumber(fromAccountNumber)
+const transfer = async (
+    userId,
+    fromAccountNumber,
+    toAccountNumber,
+    amount
+) => {
+    const session = await mongoose.startSession()
 
-    const receiver = await accountRepository.findAccountByNumber(toAccountNumber)
+    try {
+        session.startTransaction()
 
-    if (!sender) {
-        throw new Error("Sender account not found")
-    }
+        const sender =
+            await accountRepository.findAccountByNumber(
+                fromAccountNumber
+            )
 
-    if(sender.userId.toString() !== userId) {
-        throw new Error("Unauthorized access to account")
-    }
+        const receiver =
+            await accountRepository.findAccountByNumber(
+                toAccountNumber
+            )
 
-    if (!receiver) {
-        throw new Error("Receiver account not found")
-    }
+        if (!sender) {
+            throw new Error("Sender account not found")
+        }
 
-    if (fromAccountNumber === toAccountNumber) {
-        throw new Error("Cannot transfer to the same account")
-    }
+        if (
+            sender.userId.toString() !== userId
+        ) {
+            throw new Error(
+                "Unauthorized access to account"
+            )
+        }
 
-    if (amount <= 0) {
-        throw new Error("Amount must be greater than zero")
-    }
+        if (!receiver) {
+            throw new Error(
+                "Receiver account not found"
+            )
+        }
 
-    if (sender.balance < amount) {
-        throw new Error("Insufficient balance")
-    }
+        if (
+            fromAccountNumber ===
+            toAccountNumber
+        ) {
+            throw new Error(
+                "Cannot transfer to the same account"
+            )
+        }
 
-    // TODO:
-    // Use MongoDB transactions/session support to ensure
-    // atomic money transfer operations in production.
+        if (amount <= 0) {
+            throw new Error(
+                "Amount must be greater than zero"
+            )
+        }
 
+        if (sender.balance < amount) {
+            throw new Error(
+                "Insufficient balance"
+            )
+        }
 
-    // Move funds between sender and receiver accounts
-    sender.balance -= amount
-    receiver.balance += amount
+        sender.balance -= amount
+        receiver.balance += amount
 
-    await sender.save()
-    await receiver.save()
+        await sender.save({ session })
+        await receiver.save({ session })
 
-    // Generate a shared reference number so both
-    // transaction records can be linked to the same transfer
-    const reference = `TXN${Date.now()}`
+        const reference =
+            `TXN${Date.now()}`
 
-    // Create transaction entry for sender statement/history.
-    const senderTransaction = await transactionRepository.createTransaction({
-        accountId: sender._id,
-        type: "TRANSFER",
-        amount,
-        description: `Transfer sent to ${toAccountNumber}`,
-        reference,
-        status: "SUCCESS"
-    })
+        const senderTransaction =
+            await transactionRepository.createTransaction({
+                accountId: sender._id,
+                type: "TRANSFER",
+                amount,
+                description:
+                    `Transfer sent to ${toAccountNumber}`,
+                reference,
+                status: "SUCCESS",
+            },
+            session
+        )
 
-    // Create transaction entry for receiver statement/history.
-    const receiverTransaction = await transactionRepository.createTransaction({
-        accountId: receiver._id,
-        type: "TRANSFER",
-        amount,
-        description: `Transfer received from ${fromAccountNumber}`,
-        reference,
-        status: "SUCCESS"
-    })
+        const receiverTransaction =
+            await transactionRepository.createTransaction({
+                accountId: receiver._id,
+                type: "TRANSFER",
+                amount,
+                description:
+                    `Transfer received from ${fromAccountNumber}`,
+                reference,
+                status: "SUCCESS",
+            },
+            session
+        )
 
-    return {
-        sender,
-        receiver,
-        senderTransaction,
-        receiverTransaction,
+        await session.commitTransaction()
+
+        return {
+            sender,
+            receiver,
+            senderTransaction,
+            receiverTransaction,
+        }
+    } catch (error) {
+        await session.abortTransaction()
+        throw error
+    } finally {
+        session.endSession()
     }
 }
 
@@ -238,7 +277,7 @@ const getTransactionHistory = async (userId, accountNumber) => {
     }
 
     if(account.userId.toString() !== userId) {
-        throw new Error("Unauthorized access to the account")
+        throw new Error("Unauthorized access to account")
     }
 
     return await transactionRepository.findTransactionByAccountId(account._id)

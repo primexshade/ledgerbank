@@ -24,8 +24,11 @@ const Transaction = require("../models/transaction.model")
  *
  * @returns {Promise<Object>} Created transaction document
  */
-const createTransaction = async (transactionData) => {
-    return await Transaction.create(transactionData)
+const createTransaction = async (transactionData, session = null ) => {
+    return await Transaction.create(
+        [transactionData],
+        { session }
+    ).then (result => result[0])
 }
 
 /**

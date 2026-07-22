@@ -16,6 +16,7 @@
  */
 
 const transactionService = require("../services/transaction.service");
+const { validateDeposit, validateWithdraw, validateTransfer} = require("../validators/transaction.validator")
 
 /**
  * Handles account deposit requests.
@@ -34,6 +35,15 @@ const transactionService = require("../services/transaction.service");
 const deposit = async (req, res) => {
     try {
         const { accountNumber, amount } = req.body
+
+        const validationError = validateDeposit(req.body)
+
+        if(validationError) {
+            return res.status(400).json({
+                success:false,
+                message: validationError,
+            })
+        }
 
         // Delegate deposit processing to service layer.
         const result = await transactionService.deposit(accountNumber, amount)
@@ -68,6 +78,15 @@ const deposit = async (req, res) => {
 const withdraw = async (req, res) => {
     try {
         const { accountNumber, amount } = req.body
+
+        const validationError = validateWithdraw(req.body)
+
+        if(validationError) {
+            return res.status(400).json({
+                success: false,
+                message: validationError,
+            })
+        }
 
         const result = await transactionService.withdraw(
             req.user.userId,
@@ -106,6 +125,15 @@ const withdraw = async (req, res) => {
 const transfer = async (req, res) => {
     try {
         const { fromAccountNumber, toAccountNumber, amount } = req.body
+
+        const validationError = validateTransfer(req.body)
+
+        if(validationError) {
+            return res.status(400).json({
+                success: false,
+                message: validationError,
+            })
+        }
         
         const result = await transactionService.transfer(
             req.user.userId,
